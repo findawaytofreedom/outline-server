@@ -119,7 +119,7 @@ async function main() {
   logging.debug(`==============`);
 
   logging.info('Starting...');
-
+  const ExportersListenIp = process.env.SB_MONITORING_LISTEN_IP || '127.0.0.1';
   const prometheusPort = await portProvider.reserveFirstFreePort(9090);
   // Use 127.0.0.1 instead of localhost for Prometheus because it's resolving incorrectly for some users.
   // See https://github.com/Jigsaw-Code/outline-server/issues/341
@@ -127,9 +127,9 @@ async function main() {
 
   const nodeMetricsPort = await portProvider.reserveFirstFreePort(prometheusPort + 1);
   exportPrometheusMetrics(prometheus.register, nodeMetricsPort);
-  const nodeMetricsLocation = `127.0.0.1:${nodeMetricsPort}`;
+  const nodeMetricsLocation = `${ExportersListenIp}:${nodeMetricsPort}`;
 
-  const ssMetricsPort = await portProvider.reserveFirstFreePort(nodeMetricsPort + 1);
+  const ssMetricsPort = await portProvider.reserveFirstFreePort(prometheusPort + 1);
   logging.info(`Prometheus is at ${prometheusLocation}`);
   logging.info(`Node metrics is at ${nodeMetricsLocation}`);
 
@@ -143,7 +143,7 @@ async function main() {
     ],
   };
 
-  const ssMetricsLocation = `127.0.0.1:${ssMetricsPort}`;
+  const ssMetricsLocation = `${ExportersListenIp}:${ssMetricsPort}`;
   logging.info(`outline-ss-server metrics is at ${ssMetricsLocation}`);
   prometheusConfigJson.scrape_configs.push({
     job_name: 'outline-server-ss',
@@ -178,9 +178,11 @@ async function main() {
     prometheusConfigFilename,
     '--web.enable-admin-api',
     '--storage.tsdb.retention.time',
-    '31d',
+    '1d',
     '--storage.tsdb.path',
     prometheusTsdbFilename,
+    '--storage.tsdb.retention.size',
+    '5GB',
     '--web.listen-address',
     prometheusLocation,
     '--log.level',
