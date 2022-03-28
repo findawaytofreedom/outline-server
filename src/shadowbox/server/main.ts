@@ -188,13 +188,17 @@ async function main() {
     '--log.level',
     verbose ? 'debug' : 'info',
   ];
-  await startPrometheus(
-    prometheusBinary,
-    prometheusConfigFilename,
-    prometheusConfigJson,
-    prometheusArgs,
-    prometheusEndpoint
-  );
+  const isPrometheusEnabled = process.env.SB_PROMETHEUS_ENABLED || true;
+  if (isPrometheusEnabled) {
+    await startPrometheus(
+      prometheusBinary,
+      prometheusConfigFilename,
+      prometheusConfigJson,
+      prometheusArgs,
+      prometheusEndpoint
+    );
+  }
+
 
   const prometheusClient = new PrometheusClient(prometheusEndpoint);
   if (!serverConfig.data().portForNewAccessKeys) {
