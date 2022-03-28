@@ -128,7 +128,7 @@ async function main() {
   const nodeMetricsPort = await portProvider.reserveFirstFreePort(prometheusPort + 1);
   exportPrometheusMetrics(prometheus.register, nodeMetricsPort);
   const nodeMetricsLocation = `${ExportersListenIp}:${nodeMetricsPort}`;
-
+  const nodeMetricsLocationProm = `127.0.0.1:${nodeMetricsPort}`;
   const ssMetricsPort = await portProvider.reserveFirstFreePort(prometheusPort + 1);
   logging.info(`Prometheus is at ${prometheusLocation}`);
   logging.info(`Node metrics is at ${nodeMetricsLocation}`);
@@ -139,15 +139,16 @@ async function main() {
     },
     scrape_configs: [
       {job_name: 'prometheus', static_configs: [{targets: [prometheusLocation]}]},
-      {job_name: 'outline-server-main', static_configs: [{targets: [nodeMetricsLocation]}]},
+      {job_name: 'outline-server-main', static_configs: [{targets: [nodeMetricsLocationProm]}]},
     ],
   };
 
   const ssMetricsLocation = `${ExportersListenIp}:${ssMetricsPort}`;
+  const ssMetricsLocationProm = `127.0.0.1:${ssMetricsPort}`;
   logging.info(`outline-ss-server metrics is at ${ssMetricsLocation}`);
   prometheusConfigJson.scrape_configs.push({
     job_name: 'outline-server-ss',
-    static_configs: [{targets: [ssMetricsLocation]}],
+    static_configs: [{targets: [ssMetricsLocationProm]}],
   });
   const shadowsocksServer = new OutlineShadowsocksServer(
     getBinaryFilename('outline-ss-server'),
@@ -188,8 +189,8 @@ async function main() {
     '--log.level',
     verbose ? 'debug' : 'info',
   ];
-  const isPrometheusEnabled = process.env.SB_PROMETHEUS_ENABLED || true;
-  if (isPrometheusEnabled) {
+  const isPrometheusEnabled = process.env.SB_PROMETHEUS_ENABLED || "true";
+  if (isPrometheusEnabled === "true") {
     await startPrometheus(
       prometheusBinary,
       prometheusConfigFilename,
